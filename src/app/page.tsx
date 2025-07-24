@@ -1,9 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
 import { PlayerRegistration } from '@/components/PlayerRegistration';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const quizStopped = sessionStorage.getItem('quizStopped');
+    if (quizStopped === 'true') {
+      toast({
+        variant: 'destructive',
+        title: 'Quiz Stopped by Admin',
+        description: 'The host has ended the quiz. Please register to join a new game.',
+        duration: 5000,
+      });
+      sessionStorage.removeItem('quizStopped');
+    }
+  }, [toast]);
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">

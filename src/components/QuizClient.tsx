@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Timer from './Timer';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
+import type { Lobby } from '@/lib/types';
 
 type Round = 1 | 2;
 
@@ -47,7 +48,6 @@ function QuizCore() {
             setQuizData({id: docSnap.id, ...docSnap.data()} as QuizData);
             setIsTimerRunning(true);
         } else {
-            // Handle quiz not found
             console.error("Quiz not found!");
             router.push('/');
         }
@@ -55,6 +55,24 @@ function QuizCore() {
     }
 
     fetchQuiz();
+
+    // Add a listener to handle the admin stopping the quiz mid-game
+    const lobbyRef = doc(db, 'lobby', 'main_lobby');
+    const unsubscribe = onSnapshot(lobbyRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const lobbyData = docSnap.data() as Lobby;
+            // If lobby is reset while quiz is in progress, boot user
+            if (lobbyData.status === 'waiting') {
+                sessionStorage.removeItem('playerInfo');
+                sessionStorage.removeItem('quizStatus');
+                sessionStorage.setItem('quizStopped', 'true');
+                router.push('/');
+            }
+        }
+    });
+
+    return () => unsubscribe();
+
   }, [router, quizId]);
 
   const handleCauseSelect = (cause: string) => {

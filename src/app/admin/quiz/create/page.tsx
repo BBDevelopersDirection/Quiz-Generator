@@ -1,6 +1,12 @@
-import QuizEditor from '@/components/admin/QuizEditor';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+
+const QuizEditor = dynamic(() => import('@/components/admin/QuizEditor'), {
+    ssr: false,
+    loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>,
+});
 
 export default function CreateQuizPage() {
     return (

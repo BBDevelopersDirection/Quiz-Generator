@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -33,6 +34,7 @@ export default function LobbyPage() {
             // Player was removed from lobby, likely by a reset
             sessionStorage.removeItem('playerInfo');
             sessionStorage.removeItem('quizStatus');
+            sessionStorage.setItem('quizStopped', 'true');
             router.push('/');
         }
     });
