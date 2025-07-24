@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,5 +23,25 @@ if (!getApps().length) {
 }
 
 const db = getFirestore(app);
+
+if (typeof window !== 'undefined') {
+    try {
+        enableIndexedDbPersistence(db)
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    // Multiple tabs open, persistence can only be enabled
+                    // in one tab at a time.
+                    console.warn("Firestore offline persistence failed: multiple tabs open.");
+                } else if (err.code == 'unimplemented') {
+                    // The current browser does not support all of the
+                    // features required to enable persistence
+                    console.warn("Firestore offline persistence failed: browser does not support it.");
+                }
+            });
+    } catch (error) {
+        console.error("Error enabling Firestore offline persistence: ", error);
+    }
+}
+
 
 export { db };

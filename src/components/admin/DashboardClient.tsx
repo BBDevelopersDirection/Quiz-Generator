@@ -147,10 +147,13 @@ export default function DashboardClient() {
   }, [results]);
 
   const isQuizActive = lobbyStatus === 'started';
+  
   const allPlayersFinished = useMemo(() => {
     if (!isQuizActive || participants.length === 0) return false;
-    return participants.every(p => p.status === 'Completed');
-  }, [isQuizActive, participants]);
+    // Check if every participant that was in the lobby when the quiz started has now completed.
+    const completedCount = results.filter(r => r.quizId === selectedQuizId).length;
+    return participants.length > 0 && completedCount >= participants.length;
+  }, [isQuizActive, participants, results, selectedQuizId]);
 
 
   return (
@@ -167,7 +170,7 @@ export default function DashboardClient() {
                 <Users />
                 Lobby Control
             </CardTitle>
-            <CardDescription>View participants in real-time and start the quiz when ready.</CardDescription>
+            <CardDescription>View participants in real-time and start or stop the quiz.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-center p-4 bg-secondary rounded-lg gap-4">
@@ -187,23 +190,17 @@ export default function DashboardClient() {
                     </Select>
                 </div>
                 <div className='flex gap-2'>
-                    {allPlayersFinished ? (
-                         <Button variant="destructive" onClick={handleResetLobby}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            End Quiz
-                        </Button>
-                    ) : (
-                        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleStartQuiz} disabled={!selectedQuizId || participants.length === 0 || isQuizActive}>
-                            <Play className="mr-2 h-4 w-4" />
-                            Start Quiz
-                        </Button>
-                    )}
-
+                    
+                    <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={handleStartQuiz} disabled={!selectedQuizId || participants.length === 0 || isQuizActive}>
+                        <Play className="mr-2 h-4 w-4" />
+                        Start Quiz
+                    </Button>
+                    
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="destructive" disabled={isQuizActive && !allPlayersFinished}>
+                            <Button variant="destructive">
                                 <RefreshCw className="mr-2 h-4 w-4" />
-                                Reset Lobby
+                                {isQuizActive ? 'Stop & Reset' : 'Reset Lobby'}
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -215,20 +212,15 @@ export default function DashboardClient() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleResetLobby} className='bg-destructive hover:bg-destructive/90'>Reset</AlertDialogAction>
+                                <AlertDialogAction onClick={handleResetLobby} className='bg-destructive hover:bg-destructive/90'>Confirm</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
             </div>
-            {isQuizActive && !allPlayersFinished && (
+            {isQuizActive && (
                 <div className='text-center p-2 rounded-md bg-yellow-100 border border-yellow-300 text-yellow-800'>
-                    A quiz is currently in progress. Reset the lobby to end it prematurely.
-                </div>
-            )}
-            {allPlayersFinished && (
-                 <div className='text-center p-2 rounded-md bg-green-100 border border-green-300 text-green-800'>
-                    All participants have completed the quiz. You can now end the quiz.
+                    A quiz is currently in progress.
                 </div>
             )}
             <Table>
@@ -326,54 +318,44 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
       </TabsContent>
-       <TabsContent value="results">
+      <TabsContent value="results">
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Trophy />
-                    Quiz Results & Leaderboards
+                    Quiz Results
                 </CardTitle>
-                <CardDescription>View results for all completed quizzes, sorted by the fastest time.</CardDescription>
+                <CardDescription>Leaderboards for each quiz.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent>
                 {Object.keys(groupedResults).length > 0 ? (
                     Object.entries(groupedResults).map(([quizId, quizResults]) => (
-                        <Card key={quizId} className="w-full">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Quiz: {quizId}</CardTitle>
-                                <CardDescription>
-                                    {quizzes.find(q => q.id === quizId)?.passage.substring(0, 100) ?? 'Passage not found'}...
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Rank</TableHead>
-                                            <TableHead>Participant</TableHead>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead className="text-right">Completion Time</TableHead>
+                        <div key={quizId} className="mb-8">
+                            <h3 className="text-xl font-bold mb-2 text-primary">{quizId}</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Rank</TableHead>
+                                        <TableHead>Participant</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Completion Time</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {quizResults.map((result, index) => (
+                                        <TableRow key={result.email}>
+                                            <TableCell className="font-medium">{index + 1}</TableCell>
+                                            <TableCell>{result.name}</TableCell>
+                                            <TableCell>{result.email}</TableCell>
+                                            <TableCell>{formatTime(result.time)}</TableCell>
                                         </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {quizResults.map((result, index) => (
-                                            <TableRow key={result.email}>
-                                                <TableCell className="font-bold">{index + 1}</TableCell>
-                                                <TableCell>{result.name}</TableCell>
-                                                <TableCell>{result.email}</TableCell>
-                                                <TableCell className="text-right font-mono">{formatTime(result.time)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     ))
                 ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                        <BarChart3 className="mx-auto h-12 w-12" />
-                        <p className="mt-4">No quiz results have been recorded yet.</p>
-                    </div>
+                    <p className="text-center text-muted-foreground">No quiz results yet.</p>
                 )}
             </CardContent>
         </Card>
@@ -381,5 +363,3 @@ export default function DashboardClient() {
     </Tabs>
   );
 }
-
-    

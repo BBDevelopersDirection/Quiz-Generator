@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +16,10 @@ import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email.' }),
+  email: z.string().email({ message: 'Please enter a valid email.' }).refine(
+    (email) => email.endsWith('@salesforce.com'),
+    { message: 'Only Salesforce emails are allowed.' }
+  ),
 });
 
 export function PlayerRegistration() {
@@ -93,7 +97,7 @@ export function PlayerRegistration() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="alex@example.com" {...field} disabled={isSubmitting} />
+                <Input type="email" placeholder="alex@salesforce.com" {...field} disabled={isSubmitting} />
               </FormControl>
               <FormMessage />
             </FormItem>

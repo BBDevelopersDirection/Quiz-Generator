@@ -1,6 +1,12 @@
-import DashboardClient from '@/components/admin/DashboardClient';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
+const DashboardClient = dynamic(() => import('@/components/admin/DashboardClient'), {
+    loading: () => <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>,
+});
+
 
 export default function AdminDashboardPage() {
     return (

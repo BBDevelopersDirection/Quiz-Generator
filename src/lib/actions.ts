@@ -69,10 +69,21 @@ export async function addPlayerToLobby(player: {name: string, email: string}) {
     try {
         const lobbyRef = doc(db, 'lobby', 'main_lobby');
         const lobbySnap = await getDoc(lobbyRef);
+
+        const participantRef = doc(db, 'lobby', 'main_lobby', 'participants', player.email);
+        const participantSnap = await getDoc(participantRef);
+
         if (lobbySnap.exists() && lobbySnap.data().status === 'started') {
+            if (participantSnap.exists()) {
+                 return { success: false, error: 'A quiz is already in progress and this email is participating.'};
+            }
             return { success: false, error: 'A quiz is already in progress. Please wait.'};
         }
-        await setDoc(doc(db, 'lobby', 'main_lobby', 'participants', player.email), {
+
+        // If user is already in lobby and quiz hasn't started, allow them to 're-register' to get back to lobby screen
+        // If the quiz is active and they are in it, they cannot register again.
+
+        await setDoc(participantRef, {
             ...player,
             status: 'In Lobby',
         });
@@ -137,5 +148,3 @@ export async function resetLobby() {
         return { success: false, error: 'Failed to reset the lobby.' };
     }
 }
-
-    
